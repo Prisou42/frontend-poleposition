@@ -10,7 +10,7 @@ class StandingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Classement pilotes'),
+        title: const Text('Classement drivers'),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: StandingsService.getStandings(),
