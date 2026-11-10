@@ -325,14 +325,24 @@ class _ScheduleStatScreenState
                 vertical: 8,
               ),
 
-              leading: Icon(
-                session['name'] == 'Course'
-                    ? Icons.flag
-                    : session['name'] == 'Qualifications'
-                    ? Icons.timer
-                    : Icons.sports_motorsports,
-                size: 28,
-              ),
+                leading: session['name'] == 'Qualifications'
+                    ? loadedQualifying.isNotEmpty
+                    ? Image.network(
+                  loadedQualifying.first['flag']?.toString() ?? '',
+                  width: 36,
+                  height: 24,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.flag, size: 28);
+                  },
+                )
+                    : const Icon(Icons.flag, size: 28)
+                    : Icon(
+                  session['name'] == 'Course'
+                      ? Icons.flag
+                      : Icons.sports_motorsports,
+                  size: 28,
+                ),
 
               title: Text(
                 session['name'].toString(),
@@ -533,6 +543,7 @@ class _ScheduleStatScreenState
                   ? null
                   : driver[selectedResult.toLowerCase()];
 
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
 
@@ -556,23 +567,21 @@ class _ScheduleStatScreenState
 
                       const SizedBox(width: 10),
 
+
                       // DRAPEAU POUR LA COURSE
-                      if (isRace &&
-                          (driver['flag'] ?? '')
-                              .toString()
-                              .trim()
-                              .isNotEmpty)
-                        Image.network(
-                          getImageUrl(driver['flag']),
-                          width: 40,
-                          height: 27,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.flag, size: 30);
-                          },
-                        )
-                      else
-                        const Icon(Icons.flag, size: 30),
+                    // DRAPEAU COURSE ET QUALIFICATIONS
+                    if ((driver['flag'] ?? '').toString().trim().isNotEmpty)
+              Image.network(
+                getImageUrl(driver['flag']),
+                width: 40,
+                height: 27,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.flag, size: 30);
+                },
+              )
+              else
+              const Icon(Icons.flag, size: 30),
 
                       const SizedBox(width: 12),
 
