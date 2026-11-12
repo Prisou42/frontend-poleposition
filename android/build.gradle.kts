@@ -18,7 +18,19 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(":app")
 }
-
+subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(
+                if (project.name == "flutter_avif_android") {
+                    org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+                } else {
+                    org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+                }
+            )
+        }
+    }
+}
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

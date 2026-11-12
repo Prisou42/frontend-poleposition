@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:timezone/browser.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:untitled/config/APIConfig.dart';
 
 class ScheduleStatScreen extends StatefulWidget {
@@ -42,9 +43,13 @@ class _ScheduleStatScreenState
 
   final String baseUrl = ApiConfig.baseUrl;
 
+
   @override
   void initState() {
     super.initState();
+
+    tzdata.initializeTimeZones();
+
     fetchScheduleStats();
   }
 
