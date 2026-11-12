@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:untitled/screens/teamScreenStat.dart';
 
 import '../services/standings1Service.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class Standings1Screen extends StatelessWidget {
   const Standings1Screen({super.key});
