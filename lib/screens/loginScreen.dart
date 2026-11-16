@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      context.go('/login', extra: user);;
+      context.go('/', extra: user);;
 
     } catch (error) {
       if (!mounted) return;
