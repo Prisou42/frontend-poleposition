@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../services/authService.dart';
 import 'FormScreen.dart';
+import '../services/authState.dart';
 
 final authService = AuthService();
 final emailController = TextEditingController();
@@ -27,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      context.go('/', extra: user);;
+      context.go('/');
 
     } catch (error) {
       if (!mounted) return;
@@ -36,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text(error.toString())),
       );
     }
+
   }
 
   @override
@@ -44,12 +46,26 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('PolePosition'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: MyForm(
-          onLogin: handleLogin,
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              MyForm(
+                onLogin: handleLogin,
+              ),
+
+              const SizedBox(height: 15),
+
+              TextButton(
+                onPressed: () => context.go('/register'),
+                child: const Text(
+                  'Pas encore de compte ? Inscris-toi',
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
     );
   }
 }

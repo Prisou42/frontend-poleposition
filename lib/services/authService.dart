@@ -223,22 +223,74 @@ class AuthService {
   // DECONNEXION SERVEUR
   // ----------------------------------
 
+
   Future<void> logout() async {
     final accessToken = await getAccessToken();
 
     try {
       if (accessToken != null) {
-        await http.post(
+        final response = await http.post(
           Uri.parse('$baseUrl/auth/logout'),
           headers: {
             'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
           },
         );
+
+        if (response.statusCode != 200) {
+          throw Exception(
+            'Erreur serveur lors de la déconnexion : ${response.statusCode}',
+          );
+        }
       }
     } finally {
       await logoutLocal();
     }
   }
+
+
+Future<Map<String, dynamic>> register({
+required String username,
+required String email,
+required String password,
+required bool acceptTerms,
+}) async {
+    final deviceId = await _getDeviceId();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/register'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'username': username,
+        'email': email,
+        'password': password,
+        'accept_terms': acceptTerms,
+        'device_id': deviceId,
+        'device_name': _getDeviceName(),
+        'device_type': _getDeviceType(),
+      }),
+    );
+
+    final responseData = _decodeResponse(response);
+
+    if (response.statusCode != 201) {
+      throw Exception(
+        responseData['message'] ?? 'Inscription impossible.',
+      );
+    }
+
+    final data =
+    Map<String, dynamic>.from(responseData['data']);
+
+    await _saveTokens(data);
+
+    return Map<String, dynamic>.from(data['user']);
+  }
+
+
+
 
   // ----------------------------------
   // SUPPRESSION LOCALE DES TOKENS
