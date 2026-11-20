@@ -82,7 +82,7 @@ class NewsScreen extends StatelessWidget {
     Navigator.push(
     context,
     MaterialPageRoute(
-    builder: (context) => const StandingsScreen(),
+    builder: (context) => const DriversStandingsScreen(),
     ),
     );
     },
@@ -95,7 +95,7 @@ class NewsScreen extends StatelessWidget {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const Standings1Screen(),
+                      builder: (context) => const ConstructorsStandingsScreen(),
                     ));
               },
             ),
@@ -107,7 +107,7 @@ class NewsScreen extends StatelessWidget {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ScheduleScreen(),
+                      builder: (context) => const RacesScreen(),
                     ));
               },
             ),

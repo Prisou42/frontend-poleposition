@@ -6,20 +6,47 @@ class AuthState extends ChangeNotifier {
   final AuthService _authService = AuthService();
 
   bool isAuthenticated = false;
+  bool isLoading = true;
+  bool favoritesSetupCompleted = false;
 
   Future<void> initialize() async {
     await refresh();
   }
 
   Future<void> refresh() async {
+    isLoading = true;
+    notifyListeners();
+
     try {
-      await _authService.getMe();
+      final user = await _authService.getMe();
+
       isAuthenticated = true;
+
+      favoritesSetupCompleted =
+          user['favorites_setup_completed'] == true;
     } catch (_) {
       await _authService.logoutLocal();
+
       isAuthenticated = false;
+      favoritesSetupCompleted = false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void setAuthenticated(bool value) {
+    isAuthenticated = value;
+
+    if (!value) {
+      favoritesSetupCompleted = false;
     }
 
+    notifyListeners();
+  }
+
+  void setFavoritesSetupCompleted(bool value) {
+    favoritesSetupCompleted = value;
     notifyListeners();
   }
 
@@ -28,9 +55,12 @@ class AuthState extends ChangeNotifier {
       await _authService.logout();
     } finally {
       isAuthenticated = false;
+      favoritesSetupCompleted = false;
       notifyListeners();
     }
   }
 }
 
 final authState = AuthState();
+
+

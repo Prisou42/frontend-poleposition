@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:untitled/services/authState.dart';
 
 import '../services/authService.dart';
 
@@ -40,41 +41,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!acceptTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tu dois accepter les conditions d’utilisation.'),
+          content: Text(
+            'Tu dois accepter les conditions d’utilisation.',
+          ),
         ),
       );
       return;
     }
 
+    final username = usernameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
     setState(() => isLoading = true);
 
     try {
       await authService.register(
-        username: usernameController.text.trim(),
-        email: emailController.text.trim(),
-        password: passwordController.text,
+        username: username,
+        email: email,
+        password: password,
         acceptTerms: acceptTerms,
       );
 
+      // Récupération du profil et du statut des favoris
+      await authState.refresh();
+
       if (!mounted) return;
 
+      if (!authState.isAuthenticated) {
+        throw Exception(
+          'Compte créé, mais impossible de récupérer la session.',
+        );
+      }
+
+      // GoRouter décidera de la destination.
+      context.go('/');
+
+    } catch (error, stackTrace) {
+      debugPrint('REGISTER ERROR: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Compte créé avec succès !'),
+        SnackBar(
+          content: Text(
+            error.toString().replaceFirst('Exception: ', ''),
+          ),
         ),
       );
-
-      context.go('/');
-    } catch (error) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
     }
   }
 
@@ -199,3 +216,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+

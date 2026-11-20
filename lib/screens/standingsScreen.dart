@@ -1,123 +1,204 @@
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../services/standingsService.dart';
-import 'driverScreenStat.dart';
+import '../models/driverStanding.dart';
+import '../services/standinsService.dart';
+import '../widgets/polePositionAppBar.dart';
 
-class StandingsScreen extends StatelessWidget {
-  const StandingsScreen({super.key});
+class DriversStandingsScreen extends StatefulWidget {
+  const DriversStandingsScreen({super.key});
+
+  @override
+  State<DriversStandingsScreen> createState() =>
+      _DriversStandingsScreenState();
+}
+
+class _DriversStandingsScreenState
+    extends State<DriversStandingsScreen> {
+  final StandingsService service = StandingsService();
+
+  List<DriverStanding> drivers = [];
+  bool isLoading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    loadStandings();
+  }
+
+  Future<void> loadStandings() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+
+    try {
+      final result = await service.getDriversStandings();
+
+      if (!mounted) return;
+
+      setState(() {
+        drivers = result;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        error = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  String formatPoints(double points) {
+    return points % 1 == 0
+        ? points.toStringAsFixed(0)
+        : points.toStringAsFixed(2);
+  }
+
+  Widget buildDriver(DriverStanding driver) {
+    final image = StandingsService.imageUrl(driver.imageUrl);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+      child: ListTile(
+        onTap: () {
+          context.push('/drivers/${driver.id}/stats');
+        },
+        leading: SizedBox(
+          width: 62,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 15,
+                child: Text(
+                  '${driver.position}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: image.isEmpty
+                    ? const Icon(Icons.person)
+                    : Image.network(
+                  image,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.person),
+                ),
+              ),
+            ],
+          ),
+        ),
+        title: Text(
+          driver.fullName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          '${driver.constructorName} ',
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              formatPoints(driver.points),
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text(
+              'PTS',
+              style: TextStyle(fontSize: 10),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Classement drivers'),
+      appBar: const PolePositionAppBar(
+        title: 'Classement pilotes',
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: StandingsService.getStandings(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+      body: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              onPressed: isLoading ? null : loadStandings,
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Actualiser',
+            ),
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(
               child: CircularProgressIndicator(),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Erreur : ${snapshot.error}'),
-            );
-          }
-
-          final drivers = snapshot.data ?? [];
-
-          if (drivers.isEmpty) {
-            return const Center(
-              child: Text('Aucun pilote disponible'),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: drivers.length,
-            itemBuilder: (context, index) {
-              final driver = drivers[index];
-
-              return ListTile(
-                leading: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 28,
-                      child: Text(
-                        '${driver['position']}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+            )
+                : error != null
+                ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    error!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: loadStandings,
+                    child: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            )
+                : RefreshIndicator(
+              onRefresh: loadStandings,
+              child: ListView(
+                physics:
+                const AlwaysScrollableScrollPhysics(),
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'PILOTES',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  if (drivers.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'Aucun classement disponible.',
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: (driver['image_url'] != null &&
-                          driver['image_url'].toString().isNotEmpty)
-                          ? Image.network(
-                        'https://poleposition-api.onrender.com${driver['image_url']}',
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.person);
-                        },
-                      )
-                          : const SizedBox(
-                        width: 50,
-                        height: 50,
-                        child: Icon(Icons.person, size: 35),
-                      ),
-                    ),
-                  ],
-                ),
-
-
-
-                title: InkWell(
-                  onTap: () {
-
-                    debugPrint('ID du pilote : ${driver['id']}');
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DriverCareerScreen(
-                          driverId: (driver['id'] as num).toInt(),
-                        ),
-                      ),
-                    );
-
-                  },
-                  child: Text(
-                    '${driver['first_name']} ${driver['last_name']}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-
-                subtitle: Text(
-                  '${driver['constructor_name'] ?? 'Écurie inconnue'}',
-                ),
-
-                trailing: Text(
-                  '${driver['points']} pts',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              );;
-            },
-          );
-        },
+                  ...drivers.map(buildDriver),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+

@@ -1,11 +1,13 @@
-import 'dart:convert';
 
+import 'dart:convert';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/news.dart';
 
 class RssService {
-  static const String apiUrl = 'https://poleposition-api.onrender.com/news';
+  static const String apiUrl =
+      'https://poleposition-api.onrender.com/news';
 
   Future<List<News>> getArticles([String? url]) async {
     try {
@@ -13,7 +15,7 @@ class RssService {
         Uri.parse(url ?? apiUrl),
       );
 
-      print('STATUS : ${response.statusCode}');
+      debugPrint('NEWS STATUS: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -29,17 +31,14 @@ class RssService {
         );
       }
 
-      return decoded.map((item) {
-        return News(
-          id: item['id'] ?? 0,
-          title: item['title'] ?? '',
-          link: item['link'] ?? '',
-          image: item['image'],
-          description: item['description'] ?? '',
+      return decoded.map<News>((item) {
+        return News.fromJson(
+          Map<String, dynamic>.from(item),
         );
       }).toList();
-    } catch (e) {
-      print('ERREUR : $e');
+
+    } catch (error) {
+      debugPrint('RSS ERROR: $error');
       rethrow;
     }
   }

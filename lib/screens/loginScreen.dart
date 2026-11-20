@@ -1,14 +1,10 @@
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/authService.dart';
-import 'FormScreen.dart';
 import '../services/authState.dart';
-
-final authService = AuthService();
-final emailController = TextEditingController();
-final passwordController = TextEditingController();
+import 'FormScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,26 +14,36 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final AuthService authService = AuthService();
 
-  Future<void> handleLogin() async {
+  Future<void> handleLogin(String email, String password) async {
     try {
-      final user = await AuthService().login(
-        emailController.text,
-        passwordController.text,
-      );
+      await authService.login(email, password);
+
+      // Récupération du profil et du statut des favoris
+      await authState.refresh();
 
       if (!mounted) return;
 
+      if (!authState.isAuthenticated) {
+        throw Exception('Impossible de récupérer votre session.');
+      }
+
+      // GoRouter décidera de la destination :
+      // sélection des favoris ou accueil.
       context.go('/');
 
     } catch (error) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(
+          content: Text(
+            error.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
       );
     }
-
   }
 
   @override
@@ -46,19 +52,35 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('PolePosition'),
       ),
-        body: Padding(
+      body: SafeArea(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 40),
+
+              const Text(
+                'Bienvenue sur PolePosition',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
               MyForm(
                 onLogin: handleLogin,
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 20),
 
               TextButton(
-                onPressed: () => context.go('/register'),
+                onPressed: () {
+                  context.go('/register');
+                },
                 child: const Text(
                   'Pas encore de compte ? Inscris-toi',
                 ),
@@ -66,6 +88,57 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+@override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('PolePosition'),
+      ),
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+
+              const Text(
+                'Bienvenue sur PolePosition',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              MyForm(
+                onLogin: handleLogin,
+              ),
+
+              const SizedBox(height: 20),
+
+              TextButton(
+                onPressed: () {
+                  context.go('/register');
+                },
+                child: const Text(
+                  'Pas encore de compte ? Inscris-toi',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

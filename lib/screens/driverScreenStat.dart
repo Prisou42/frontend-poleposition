@@ -1,13 +1,16 @@
 
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:untitled/config/APIConfig.dart';
 
+import '../widgets/polePositionAppBar.dart';
+
 class DriverCareerScreen extends StatefulWidget {
   final int driverId;
 
-  const DriverCareerScreen( {
+  const DriverCareerScreen({
     super.key,
     required this.driverId,
   });
@@ -23,7 +26,6 @@ class _DriverCareerScreenState
   bool isLoading = true;
   String? error;
 
-  // Adresse de ton backend Node.js
   final String baseUrl = ApiConfig.baseUrl;
 
   @override
@@ -75,7 +77,6 @@ class _DriverCareerScreenState
     }
   }
 
-
   Widget statCard(String title, dynamic value) {
     return Card(
       child: Padding(
@@ -104,11 +105,27 @@ class _DriverCareerScreenState
     );
   }
 
+  String getImageUrl(dynamic imagePath) {
+    if (imagePath == null ||
+        imagePath.toString().trim().isEmpty) {
+      return '';
+    }
+
+    final path = imagePath.toString().trim();
+
+    if (path.startsWith('http://') ||
+        path.startsWith('https://')) {
+      return path;
+    }
+
+    return '$baseUrl/${path.startsWith('/') ? path.substring(1) : path}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('STATISTIQUES DE CARRIÈRE'),
+      appBar: const PolePositionAppBar(
+        title: 'STATISTIQUES DE CARRIÈRE',
       ),
       body: isLoading
           ? const Center(
@@ -116,38 +133,54 @@ class _DriverCareerScreenState
       )
           : error != null
           ? Center(
-        child: Text(error!),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(error!),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                  error = null;
+                });
+                fetchCareerStats();
+              },
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
       )
           : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Column(
                 children: [
-                  if ((driver!['image_url'] ??
-                      '').toString().isNotEmpty)
-        if ((driver!['image_url'] ?? '').toString().isNotEmpty)
-    Image.network(
-    getImageUrl(driver!['image_url']),
-    width: 150,
-    height: 150,
-    fit: BoxFit.contain,
-    errorBuilder: (context, error, stackTrace) {
-    debugPrint('ERREUR IMAGE : $error');
+                  if ((driver!['image_url'] ?? '')
+                      .toString()
+                      .isNotEmpty)
+                    Image.network(
+                      getImageUrl(driver!['image_url']),
+                      width: 150,
+                      height: 150,
+                      fit: BoxFit.contain,
+                      errorBuilder:
+                          (context, error, stackTrace) {
+                        debugPrint(
+                            'ERREUR IMAGE : $error');
 
-    return const Icon(
-    Icons.person,
-    size: 100,
-    );
-    },
-    ),
+                        return const Icon(
+                          Icons.person,
+                          size: 100,
+                        );
+                      },
+                    ),
                   const SizedBox(height: 12),
                   Text(
-                    '${driver!['first_name']} '
-                        '${driver!['last_name']}',
+                    '${driver!['first_name']} ${driver!['last_name']}',
                     style: const TextStyle(
                       fontSize: 25,
                       fontWeight: FontWeight.bold,
@@ -176,33 +209,18 @@ class _DriverCareerScreenState
               childAspectRatio: 1.5,
               children: [
                 statCard(
-                  'Grands Prix',
-                  driver!['total_races'],
-                ),
+                    'Grands Prix', driver!['total_races']),
+                statCard('Victoires', driver!['wins']),
+                statCard('Podiums', driver!['podiums']),
                 statCard(
-                  'Victoires',
-                  driver!['wins'],
-                ),
+                    'Pole positions', driver!['poles']),
                 statCard(
-                  'Podiums',
-                  driver!['podiums'],
-                ),
+                    'Meilleurs tours',
+                    driver!['fastest_laps']),
+                statCard('Points', driver!['points']),
                 statCard(
-                  'Pole positions',
-                  driver!['poles'],
-                ),
-                statCard(
-                  'Meilleurs tours',
-                  driver!['fastest_laps'],
-                ),
-                statCard(
-                  'Points',
-                  driver!['points'],
-                ),
-                statCard(
-                  'Titres mondiaux',
-                  driver!['championships'],
-                ),
+                    'Titres mondiaux',
+                    driver!['championships']),
               ],
             ),
           ],
@@ -210,18 +228,6 @@ class _DriverCareerScreenState
       ),
     );
   }
-  String getImageUrl(dynamic imagePath) {
-    if (imagePath == null || imagePath.toString().trim().isEmpty) {
-      return '';
-    }
-
-    final path = imagePath.toString().trim();
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return '$baseUrl/${path.startsWith('/') ? path.substring(1) : path}';
-  }
 }
+
 

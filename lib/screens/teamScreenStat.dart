@@ -1,13 +1,16 @@
 
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:untitled/config/APIConfig.dart';
 
+import '../widgets/polePositionAppBar.dart';
+
 class TeamCareerScreen extends StatefulWidget {
   final int teamId;
 
-  const TeamCareerScreen( {
+  const TeamCareerScreen({
     super.key,
     required this.teamId,
   });
@@ -17,13 +20,11 @@ class TeamCareerScreen extends StatefulWidget {
       _TeamCareerScreenState();
 }
 
-class _TeamCareerScreenState
-    extends State<TeamCareerScreen> {
+class _TeamCareerScreenState extends State<TeamCareerScreen> {
   Map<String, dynamic>? team;
   bool isLoading = true;
   String? error;
 
-  // Adresse de ton backend Node.js
   final String baseUrl = ApiConfig.baseUrl;
 
   @override
@@ -75,7 +76,6 @@ class _TeamCareerScreenState
     }
   }
 
-
   Widget statCard(String title, dynamic value) {
     return Card(
       child: Padding(
@@ -104,11 +104,27 @@ class _TeamCareerScreenState
     );
   }
 
+  String getImageUrl(dynamic imagePath) {
+    if (imagePath == null ||
+        imagePath.toString().trim().isEmpty) {
+      return '';
+    }
+
+    final path = imagePath.toString().trim();
+
+    if (path.startsWith('http://') ||
+        path.startsWith('https://')) {
+      return path;
+    }
+
+    return '$baseUrl/${path.startsWith('/') ? path.substring(1) : path}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('HISTORIQUE DU TEAM'),
+      appBar: const PolePositionAppBar(
+        title: 'HISTORIQUE DU TEAM',
       ),
       body: isLoading
           ? const Center(
@@ -116,50 +132,63 @@ class _TeamCareerScreenState
       )
           : error != null
           ? Center(
-        child: Text(error!),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(error!),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                  error = null;
+                });
+                fetchCareerStats();
+              },
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
       )
           : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Column(
                 children: [
-                  if ((team!['imageurl'] ??
-                      '').toString().isNotEmpty)
+                  if ((team!['imageurl'] ?? '')
+                      .toString()
+                      .isNotEmpty)
                     Image.network(
-                      team!['imageurl'],
+                      getImageUrl(team!['imageurl']),
                       width: 150,
                       height: 150,
                       fit: BoxFit.contain,
-                      errorBuilder: (
-                          context,
-                          error,
-                          stackTrace,
-                          ) =>
-                      const Icon(
-                        Icons.person,
-                        size: 100,
-                      ),
+                      errorBuilder:
+                          (context, error, stackTrace) {
+                        debugPrint(
+                            'ERREUR IMAGE : $error');
+
+                        return const Icon(
+                          Icons.groups,
+                          size: 100,
+                        );
+                      },
                     ),
                   const SizedBox(height: 12),
-
-
                   Text(
-                    '${team!['name']} '
-                        ,
+                    team!['name']?.toString() ?? '',
                     style: const TextStyle(
                       fontSize: 25,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                 ],
               ),
             ),
-            /* const SizedBox(height: 24), */
+            const SizedBox(height: 24),
             const Text(
               'BILAN HISTORIQUE',
               style: TextStyle(
@@ -176,37 +205,21 @@ class _TeamCareerScreenState
               childAspectRatio: 1.5,
               children: [
                 statCard(
-                  'Grands Prix',
-                  team!['total_races'],
-                ),
+                    'Grands Prix', team!['total_races']),
+                statCard('Victoires', team!['wins']),
+                statCard('Podiums', team!['podiums']),
                 statCard(
-                  'Victoires',
-                  team!['wins'],
-                ),
+                    'Pole positions', team!['poles']),
                 statCard(
-                  'Podiums',
-                  team!['podiums'],
-                ),
+                    'Meilleurs tours',
+                    team!['fastest_laps']),
+                statCard('Points', team!['points']),
                 statCard(
-                  'Pole positions',
-                  team!['poles'],
-                ),
+                    'Titres pilotes',
+                    team!['championshipsd']),
                 statCard(
-                  'Meilleurs tours',
-                  team!['fastest_laps'],
-                ),
-                statCard(
-                  'Points',
-                  team!['points'],
-                ),
-                statCard(
-                  'Titres pilotes',
-                  team!['championshipsd'],
-                ),
-                statCard(
-                  'Titres constructeurs',
-                  team!['championshipsc'],
-                )
+                    'Titres constructeurs',
+                    team!['championshipsc']),
               ],
             ),
           ],
@@ -215,3 +228,4 @@ class _TeamCareerScreenState
     );
   }
 }
+

@@ -1,9 +1,8 @@
+
 import 'package:flutter/material.dart';
 
-import 'loginScreen.dart';
-
 class MyForm extends StatefulWidget {
-  final Future<void> Function() onLogin;
+  final Future<void> Function(String email, String password) onLogin;
 
   const MyForm({
     super.key,
@@ -13,9 +12,15 @@ class MyForm extends StatefulWidget {
   @override
   State<MyForm> createState() => _MyFormState();
 }
-class _MyFormState extends State<MyForm> {
 
+class _MyFormState extends State<MyForm> {
   final formKey = GlobalKey<FormState>();
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool isLoading = false;
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -24,40 +29,82 @@ class _MyFormState extends State<MyForm> {
     super.dispose();
   }
 
+  Future<void> handleLogin() async {
+    if (!formKey.currentState!.validate() || isLoading) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      await widget.onLogin(
+        emailController.text.trim(),
+        passwordController.text,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
       key: formKey,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: TextFormField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "Email"),
-              validator: (value) => (value == null || value.isEmpty)
-                  ? "Le champ ne peut pas etre vide"
-                  : null,
+          TextFormField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'Adresse e-mail',
+              prefixIcon: Icon(Icons.email_outlined),
             ),
-          ),
-          Expanded(
-            child: TextFormField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: "Mot de passe"),
-              validator: (value) => (value == null || value.isEmpty)
-                  ? "Le champ ne peut pas etre vide"
-                  : null,
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                await widget.onLogin();
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Entre ton adresse e-mail.';
               }
+              return null;
             },
-            child: const Text("Se connecter"),
           ),
 
+          const SizedBox(height: 16),
+
+          TextFormField(
+            controller: passwordController,
+            obscureText: obscurePassword,
+            decoration: InputDecoration(
+              labelText: 'Mot de passe',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscurePassword
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                ),
+                onPressed: () {
+                  setState(() {
+                    obscurePassword = !obscurePassword;
+                  });
+                },
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Entre ton mot de passe.';
+              }
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          ElevatedButton(
+            onPressed: isLoading ? null : handleLogin,
+            child: isLoading
+                ? const CircularProgressIndicator()
+                : const Text('Se connecter'),
+          ),
         ],
       ),
     );

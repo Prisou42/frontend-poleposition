@@ -1,48 +1,56 @@
 
-
 import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class News {
-  static const baseUrl = "https://localhost:3000/news";
+  static const String baseUrl =
+      'https://poleposition-api.onrender.com/news';
 
-
-  final int id;
   final String title;
   final String? image;
   final String link;
   final String? description;
 
+  News({
+    required this.title,
+    required this.link,
+    this.image,
+    this.description,
+  });
 
-
-
-
-  News({required this.id, required this.title, required this.link, required this.image, this.description});
-
-
-
-
+  factory News.fromJson(Map<String, dynamic> json) {
+    return News(
+      title: json['title']?.toString() ?? 'Sans titre',
+      image: json['image']?.toString(),
+      link: json['link']?.toString() ?? '',
+      description: json['description']?.toString(),
+    );
+  }
 
   static Future<List<News>> fetchNews() async {
-    var response = await http.get(Uri.parse("$baseUrl/"));
+    final response = await http.get(
+      Uri.parse(baseUrl),
+    );
 
     if (response.statusCode != 200) {
-      throw Exception("Error ${response.statusCode} fetching news");
+      throw Exception(
+        'Erreur ${response.statusCode} lors du chargement des actualités',
+      );
     }
 
-    return compute((input) {
-      final jsonList = jsonDecode(input);
-      return jsonList.map<News>((jsonObj) => News(
-        id: jsonObj["id"],
-        title: jsonObj["title"],
-        image: jsonObj["director"],
-        link: jsonObj["link"],
-        description: jsonObj["description"],
+    final decoded = jsonDecode(response.body);
 
-      )).toList();
-    }, response.body);
+    if (decoded is! List) {
+      throw const FormatException(
+        'La réponse API doit être une liste d actualités.',
+      );
+    }
+
+    return decoded.map<News>((item) {
+      return News.fromJson(
+        Map<String, dynamic>.from(item),
+      );
+    }).toList();
   }
 }
 

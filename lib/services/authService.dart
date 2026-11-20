@@ -122,7 +122,7 @@ class AuthService {
     await _storage.write(
       key: 'refresh_token',
       value: refreshToken,
-    );
+    );;
   }
 
   Future<String?> getAccessToken() async {
@@ -249,12 +249,14 @@ class AuthService {
   }
 
 
-Future<Map<String, dynamic>> register({
-required String username,
-required String email,
-required String password,
-required bool acceptTerms,
-}) async {
+
+
+  Future<Map<String, dynamic>> register({
+    required String username,
+    required String email,
+    required String password,
+    required bool acceptTerms,
+  }) async {
     final deviceId = await _getDeviceId();
 
     final response = await http.post(
@@ -273,6 +275,9 @@ required bool acceptTerms,
       }),
     );
 
+    print('REGISTER STATUS: ${response.statusCode}');
+    print('REGISTER BODY: ${response.body}');
+
     final responseData = _decodeResponse(response);
 
     if (response.statusCode != 201) {
@@ -281,14 +286,12 @@ required bool acceptTerms,
       );
     }
 
-    final data =
-    Map<String, dynamic>.from(responseData['data']);
+    final data = Map<String, dynamic>.from(responseData['data']);
 
     await _saveTokens(data);
 
     return Map<String, dynamic>.from(data['user']);
   }
-
 
 
 
@@ -299,6 +302,24 @@ required bool acceptTerms,
   Future<void> logoutLocal() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
+  }
+
+  Future<void> testNews() async {
+    try {
+      final uri = Uri.parse('$baseUrl/news');
+
+      print('NEWS URL: $uri');
+
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 30),
+      );
+
+      print('NEWS STATUS: ${response.statusCode}');
+      print('NEWS BODY: ${response.body}');
+    } catch (e, stackTrace) {
+      print('NEWS ERROR: $e');
+      print(stackTrace);
+    }
   }
 
   // ----------------------------------
